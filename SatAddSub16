@@ -1,0 +1,32 @@
+CHIP SatAddSub16 {
+    IN x[16], y[16], op;
+    OUT out[16], ovf;
+
+    PARTS:
+
+    
+    Mux16(a=x, b=y, sel=op, out=aluInX);
+    Mux16(a=y, b=x, sel=op, out=aluInY);
+
+  
+    ALU(x=aluInX, y=aluInY, zx=false, nx=false, zy=false, ny=op, f=true, no=op, out=res, out[15]=signRes, zr=zr, ng=ng);
+
+
+    And16(a=x, b=true, out[15]=sx);
+    And16(a=y, b=true, out[15]=sy);
+
+    Xor(a=sy, b=op, out=effSy);
+
+   
+    Xor(a=sx, b=effSy, out=signsDiff); 
+    Not(in=signsDiff, out=signsSame);  
+    
+    Xor(a=sx, b=signRes, out=resDiff); 
+    And(a=signsSame, b=resDiff, out=isOvf);
+    Or(a=isOvf, b=false, out=ovf); 
+
+    Mux16(a[15]=true, a[0..14]=false, b[15]=false, b[0..14]=true, sel=signRes, out=satLimit);
+
+
+    Mux16(a=res, b=satLimit, sel=isOvf, out=out);
+}
